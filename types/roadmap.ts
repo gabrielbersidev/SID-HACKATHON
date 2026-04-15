@@ -35,9 +35,3 @@ export interface RoadmapStep {
   startYear: number;
   endYear: number;
 }
-
-export interface RoadmapParams {
-  reductionTarget: number;
-  budget: number;
-  period: number;
-}
