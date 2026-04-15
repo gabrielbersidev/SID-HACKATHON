@@ -1,7 +1,7 @@
 import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 import { Inter, Playfair_Display } from "next/font/google";
-import Layout from "@/components/Layout";
+import DashboardLayout from "@/components/DashboardLayout";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -16,9 +16,9 @@ const playfair = Playfair_Display({
 export default function App({ Component, pageProps }: AppProps) {
   return (
     <div className={`${inter.variable} ${playfair.variable} font-sans`}>
-      <Layout>
+      <DashboardLayout>
         <Component {...pageProps} />
-      </Layout>
+      </DashboardLayout>
     </div>
   );
 }

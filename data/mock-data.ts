@@ -1,4 +1,4 @@
-import { Technology, UserInputs, RoadmapStep } from "../types/roadmap";
+import { Technology, UserInputs, RoadmapStep } from "../types/decarbonization";
 
 export const mockTechnologies: Technology[] = [
   {
@@ -93,7 +93,7 @@ export const mockTechnologies: Technology[] = [
   },
   {
     id: "tech-6",
-    name: "Higrogênio Verde",
+    name: "Hidrogênio Verde",
     description: "Produção de hidrogênio via eletrólise de água com eletricidade de fontes renováveis.",
     mitigationPotential: 350000,
     economicViability: {
@@ -129,25 +129,33 @@ export const mockTechnologies: Technology[] = [
   },
 ];
 
-export const generateInitialRoadmapStep = (inputs: UserInputs): RoadmapStep => {
-  // Simple logic to pick a technology that fits the CAPEX budget
-  const tech = mockTechnologies.find(t => t.economicViability.capex <= inputs.capexBudget) || mockTechnologies[3];
-  return {
-    id: "step-1",
-    technology: tech,
-    startYear: inputs.roadmapStartYear,
-    endYear: inputs.roadmapEndYear,
-  };
+export const generateInitialCycleSuggestions = (inputs: UserInputs): Technology[] => {
+  // Simular seleção de 3 tecnologias baseadas nos inputs
+  return mockTechnologies.slice(0, 3);
 };
 
-export const suggestNextTechnologies = (currentYear: number, inputs: UserInputs): Technology[] => {
-  // Suggest 3 technologies that match the inputs
-  const filtered = mockTechnologies.filter(t => 
-    t.economicViability.capex <= inputs.capexBudget &&
-    t.economicViability.abatementCost <= inputs.maxAbatementCost &&
-    t.implementation.trl >= (inputs.minTrl || 1) &&
-    t.implementation.trl <= (inputs.maxTrl || 9)
-  );
-  
-  return filtered.length > 0 ? filtered.slice(0, 3) : mockTechnologies.slice(0, 3);
+export const generateNextCycleSuggestions = (currentEndYear: number, inputs: UserInputs): Technology[] => {
+  // Simular tecnologias para o próximo período (ex: TRL maior, custos menores)
+  return mockTechnologies.slice(3, 6);
+};
+
+export const getInitialRoadmap = (selectedTech: Technology, inputs: UserInputs): RoadmapStep[] => {
+  return [{
+    id: `step-${selectedTech.id}-${inputs.initialRoadmapPeriod.startYear}`,
+    technology: selectedTech,
+    startYear: inputs.initialRoadmapPeriod.startYear,
+    endYear: inputs.initialRoadmapPeriod.endYear,
+  }];
+};
+
+export const addRoadmapStep = (currentRoadmap: RoadmapStep[], selectedTech: Technology, nextStartYear: number, nextEndYear: number): RoadmapStep[] => {
+  return [
+    ...currentRoadmap,
+    {
+      id: `step-${selectedTech.id}-${nextStartYear}`,
+      technology: selectedTech,
+      startYear: nextStartYear,
+      endYear: nextEndYear,
+    },
+  ];
 };

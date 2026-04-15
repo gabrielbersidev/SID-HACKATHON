@@ -6,8 +6,7 @@ export interface UserInputs {
   maxAbatementCost: number; // Custo de mitigação máximo $/tCO2e
   minTrl: number; // TRL mínimo preferencial
   maxTrl: number; // TRL máximo preferencial
-  roadmapStartYear: number; // Ano de início do primeiro ciclo
-  roadmapEndYear: number; // Ano de fim do primeiro ciclo
+  initialRoadmapPeriod: { startYear: number; endYear: number }; // Período do primeiro ciclo
 }
 
 export interface Technology {
@@ -24,7 +23,7 @@ export interface Technology {
   };
   implementation: {
     trl: number; // Technology Readiness Level (1-9)
-    challenges: string[]; // ex: ['Regulamentação', 'Infraestrutura', 'Integração de Sistemas']
+    challenges: string[]; // ex: ["Regulamentação", "Infraestrutura", "Integração de Sistemas"]
   };
   marketCompetition: string; // Análise breve sobre tecnologias concorrentes
 }

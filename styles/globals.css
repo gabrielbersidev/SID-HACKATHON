@@ -6,24 +6,24 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #000000;
+  --foreground: #111827; /* Near black for better Notion-style contrast */
   --card: #ffffff;
-  --card-foreground: #000000;
+  --card-foreground: #111827;
   --popover: #ffffff;
-  --popover-foreground: #000000;
+  --popover-foreground: #111827;
   --primary: #2ECC71;
   --primary-foreground: #ffffff;
   --secondary: #F1C40F;
-  --secondary-foreground: #000000;
-  --muted: #f4f4f5;
-  --muted-foreground: #71717a;
-  --accent: #f4f4f5;
-  --accent-foreground: #18181b;
+  --secondary-foreground: #111827;
+  --muted: #f9fafb; /* Lighter gray for Notion feel */
+  --muted-foreground: #6b7280;
+  --accent: #f3f4f6;
+  --accent-foreground: #111827;
   --destructive: #ef4444;
-  --border: #e4e4e7;
-  --input: #e4e4e7;
+  --border: #e5e7eb;
+  --input: #e5e7eb;
   --ring: #2ECC71;
-  --radius: 0.5rem;
+  --radius: 0.6rem;
   
   /* Brand Specifics */
   --sid-green: #2ECC71;
@@ -34,8 +34,10 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui;
-  --font-serif: var(--font-playfair), ui-serif, Georgia;
+  
+  /* Notion Typography: System Sans & Serif Fallbacks */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-serif: "Lyon-Text", "Georgia", "Playfair Display", serif;
   
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
@@ -57,5 +59,25 @@
   }
   body {
     @apply bg-background text-foreground font-sans antialiased;
+  }
+  h1, h2, h3, h4, .font-serif {
+    @apply font-serif tracking-tight;
+  }
+}
+
+/* Fix Shadcn Transparencies - Ensuring Solid Backgrounds */
+@layer components {
+  /* Critical for Popovers and Dialogs appearing over blurred content */
+  div[data-slot="popover-content"],
+  div[data-slot="dialog-content"] {
+    @apply bg-white shadow-2xl border border-border;
+    background-color: #ffffff !important;
+    opacity: 1 !important;
+    filter: none !important;
+  }
+
+  /* Overlay aesthetics */
+  div[data-slot="dialog-overlay"] {
+    @apply bg-black/40 backdrop-blur-sm;
   }
 }
