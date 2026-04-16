@@ -30,6 +30,11 @@ export default function Home({ session }: HomeProps) {
 
   // Core AI Fetch Logic
   const fetchAiSuggestions = async (currentInputs: UserInputs, history: RoadmapStep[]) => {
+    if (!navigator.onLine) {
+      alert("Você parece estar sem conexão com a internet. Verifique sua rede e tente novamente.");
+      return [];
+    }
+
     setIsAiLoading(true);
     try {
       const response = await fetch("/api/engine", {
@@ -46,6 +51,7 @@ export default function Home({ session }: HomeProps) {
       return data;
     } catch (error) {
       console.error("Erro na sugestão de IA:", error);
+      alert("Houve um erro técnico ao consultar o SID ENGINE. Verifique sua conexão ou tente novamente mais tarde.");
       return [];
     } finally {
       setIsAiLoading(false);
