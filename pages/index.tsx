@@ -6,10 +6,6 @@ import LoadingScreen from "@/components/LoadingScreen";
 import RoadmapScreen from "@/components/RoadmapScreen";
 import ComparisonModal from "@/components/ComparisonModal";
 import { UserInputs, Technology, RoadmapStep } from "@/types/decarbonization";
-import { 
-  generateInitialCycleSuggestions, 
-  generateNextCycleSuggestions 
-} from "@/data/mock-data";
 import { strategyEngine } from "@/lib/engine";
 
 type WorkflowState = "INPUT" | "LOADING" | "BUILDER";
@@ -21,23 +17,48 @@ export default function Home() {
   const [suggestions, setSuggestions] = useState<Technology[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pendingPeriod, setPendingPeriod] = useState<{ startYear: number; endYear: number } | null>(null);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+
+  // Core AI Fetch Logic
+  const fetchAiSuggestions = async (currentInputs: UserInputs, history: RoadmapStep[]) => {
+    setIsAiLoading(true);
+    try {
+      const response = await fetch("/api/engine", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          inputs: currentInputs, 
+          currentRoadmap: history.map(s => ({ technologyId: s.technology.id, startYear: s.startYear, endYear: s.endYear }))
+        }),
+      });
+
+      if (!response.ok) throw new Error("Falha ao consultar o motor de IA");
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Erro na sugestão de IA:", error);
+      return [];
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
 
   // Flow handlers
-  const handleStartSim = (newInputs: UserInputs) => {
+  const handleStartSim = async (newInputs: UserInputs) => {
     setInputs(newInputs);
     setState("LOADING");
     
-    // Simulate engine processing
-    setTimeout(() => {
-      const initialSuggestions = generateInitialCycleSuggestions(newInputs);
-      setSuggestions(initialSuggestions as any);
-      setPendingPeriod({
-        startYear: newInputs.initialRoadmapPeriod.startYear,
-        endYear: newInputs.initialRoadmapPeriod.endYear
-      });
-      setIsModalOpen(true);
-      setState("BUILDER");
-    }, 2500);
+    // Call the AI Engine for the first cycle
+    const initialSuggestions = await fetchAiSuggestions(newInputs, []);
+    
+    setSuggestions(initialSuggestions);
+    setPendingPeriod({
+      startYear: newInputs.initialRoadmapPeriod.startYear,
+      endYear: newInputs.initialRoadmapPeriod.endYear
+    });
+    
+    setIsModalOpen(true);
+    setState("BUILDER");
   };
 
   const handleSelectTechnology = (tech: Technology) => {
@@ -55,31 +76,27 @@ export default function Home() {
     setPendingPeriod(null);
   };
 
-  const handleRequestNextCycle = () => {
+  const handleRequestNextCycle = async () => {
     if (!inputs) return;
     
+    let nextPeriod;
     if (roadmapSteps.length === 0) {
-      // Re-initialize from user inputs if timeline was empty
-      const initialSuggestions = generateInitialCycleSuggestions(inputs);
-      setSuggestions(initialSuggestions as any);
-      setPendingPeriod({
+      nextPeriod = {
         startYear: inputs.initialRoadmapPeriod.startYear,
         endYear: inputs.initialRoadmapPeriod.endYear
-      });
+      };
     } else {
-      // Standard next cycle using Engine prediction
       const lastStep = roadmapSteps[roadmapSteps.length - 1];
-      const nextPeriod = strategyEngine.predictNextPeriod(lastStep.endYear, inputs.targetYear);
-      
-      if (!nextPeriod) return; // Horizon reached
-
-      const nextSuggestions = generateNextCycleSuggestions(lastStep.endYear, inputs, roadmapSteps);
-      
-      setSuggestions(nextSuggestions as any);
-      setPendingPeriod(nextPeriod);
+      nextPeriod = strategyEngine.predictNextPeriod(lastStep.endYear, inputs.targetYear);
     }
+
+    if (!nextPeriod) return; // Horizon reached
+
+    setPendingPeriod(nextPeriod);
+    setIsModalOpen(true); // Open modal early with loading state
     
-    setIsModalOpen(true);
+    const nextSuggestions = await fetchAiSuggestions(inputs, roadmapSteps);
+    setSuggestions(nextSuggestions);
   };
 
   const handleRemoveStep = (id: string) => {
@@ -141,6 +158,7 @@ export default function Home() {
           technologies={suggestions}
           onSelect={handleSelectTechnology}
           period={pendingPeriod}
+          isLoading={isAiLoading}
         />
       </div>
     </>

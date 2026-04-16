@@ -34,9 +34,10 @@ interface ComparisonModalProps {
   technologies: Technology[];
   onSelect: (tech: Technology) => void;
   period?: { startYear: number; endYear: number } | null;
+  isLoading?: boolean;
 }
 
-const ComparisonModal = ({ isOpen, onClose, technologies, onSelect, period }: ComparisonModalProps) => {
+const ComparisonModal = ({ isOpen, onClose, technologies, onSelect, period, isLoading }: ComparisonModalProps) => {
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
@@ -48,6 +49,28 @@ const ComparisonModal = ({ isOpen, onClose, technologies, onSelect, period }: Co
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-[95vw] md:max-w-6xl max-h-[90vh] overflow-hidden flex flex-col bg-white border-none shadow-[0_40px_100px_rgba(0,0,0,0.3)] z-[100] p-0 rounded-[2.5rem]">
+        {isLoading ? (
+          <div className="p-24 flex flex-col items-center justify-center space-y-8 min-h-[500px]">
+             <div className="relative">
+                <div className="absolute inset-0 bg-sid-green/20 rounded-full blur-2xl animate-pulse" />
+                <div className="relative w-20 h-20 rounded-3xl bg-sid-black flex items-center justify-center shadow-2xl ring-1 ring-white/20">
+                  <Cpu className="text-sid-green animate-spin" size={32} />
+                </div>
+             </div>
+             <div className="text-center space-y-3">
+                <h3 className="text-2xl font-serif font-black tracking-tight">IA Estrategista Analisando...</h3>
+                <div className="flex flex-col items-center gap-1">
+                   <p className="text-slate-400 font-medium">Cruzando dados de investimento vs mitigação</p>
+                   <div className="flex gap-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-sid-green animate-bounce" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-sid-green animate-bounce [animation-delay:0.2s]" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-sid-green animate-bounce [animation-delay:0.4s]" />
+                   </div>
+                </div>
+             </div>
+          </div>
+        ) : (
+          <>
         {/* Header Section - Medium density with Period display */}
         <DialogHeader className="px-12 pt-10 pb-6 bg-slate-50 border-b relative">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -207,6 +230,8 @@ const ComparisonModal = ({ isOpen, onClose, technologies, onSelect, period }: Co
             Retornar ao Simulador
           </Button>
         </div>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
