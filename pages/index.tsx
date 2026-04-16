@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import Head from "next/head";
+import { useRouter } from "next/router";
 import { motion, AnimatePresence } from "framer-motion";
 import InputScreen from "@/components/InputScreen";
 import LoadingScreen from "@/components/LoadingScreen";
@@ -7,10 +8,17 @@ import RoadmapScreen from "@/components/RoadmapScreen";
 import ComparisonModal from "@/components/ComparisonModal";
 import { UserInputs, Technology, RoadmapStep } from "@/types/decarbonization";
 import { strategyEngine } from "@/lib/engine";
+import { roadmapService } from "@/services/roadmapService";
+import type { Session } from "@supabase/supabase-js";
 
 type WorkflowState = "INPUT" | "LOADING" | "BUILDER";
 
-export default function Home() {
+interface HomeProps {
+  session: Session | null;
+}
+
+export default function Home({ session }: HomeProps) {
+  const router = useRouter();
   const [state, setState] = useState<WorkflowState>("INPUT");
   const [inputs, setInputs] = useState<UserInputs | null>(null);
   const [roadmapSteps, setRoadmapSteps] = useState<RoadmapStep[]>([]);
@@ -18,6 +26,7 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pendingPeriod, setPendingPeriod] = useState<{ startYear: number; endYear: number } | null>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Core AI Fetch Logic
   const fetchAiSuggestions = async (currentInputs: UserInputs, history: RoadmapStep[]) => {
@@ -103,6 +112,63 @@ export default function Home() {
     setRoadmapSteps(prev => prev.filter(step => step.id !== id));
   };
 
+  // Prevent accidental navigation
+  React.useEffect(() => {
+    const handleRouteChange = (url: string) => {
+      // If we are in the builder and have progress, warn before leaving
+      if (state === "BUILDER" && roadmapSteps.length > 0 && !isSaving) {
+        if (!confirm("Tem certeza que deseja sair? O progresso da simulação atual não será salvo.")) {
+          router.events.emit("routeChangeError");
+          throw "Route change aborted by user";
+        }
+      }
+    };
+
+    router.events.on("routeChangeStart", handleRouteChange);
+
+    // Also handle browser close/refresh
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (state === "BUILDER" && roadmapSteps.length > 0 && !isSaving) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      router.events.off("routeChangeStart", handleRouteChange);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [state, roadmapSteps.length, isSaving, router.events]);
+
+  const handleSaveRoadmap = async () => {
+    if (!inputs || !session?.user?.id) {
+       alert("Sessão expirada. Faça login novamente.");
+       return;
+    }
+    
+    setIsSaving(true);
+    try {
+      const roadmapToSave = {
+        title: `Estratégia ${inputs.targetYear}`,
+        targetYear: inputs.targetYear,
+        netZeroTarget: inputs.netZeroTarget,
+        capexBudget: inputs.capexBudget,
+        opexBudget: inputs.opexBudget,
+        steps: roadmapSteps
+      };
+
+      await roadmapService.saveFullRoadmap(roadmapToSave, session.user.id);
+      router.push("/roadmaps");
+    } catch (error) {
+      console.error("Erro ao salvar:", error);
+      alert("Erro ao salvar roadmap no workspace.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <>
       <Head>
@@ -147,6 +213,7 @@ export default function Home() {
                 onAddNextCycle={handleRequestNextCycle}
                 onRemoveStep={handleRemoveStep}
                 targetYear={inputs?.targetYear || 2050}
+                onSave={handleSaveRoadmap}
               />
             </motion.div>
           )}
@@ -160,6 +227,14 @@ export default function Home() {
           period={pendingPeriod}
           isLoading={isAiLoading}
         />
+
+        {/* Global Save Loader Overlay */}
+        {isSaving && (
+          <div className="fixed inset-0 bg-sid-black/80 backdrop-blur-md z-[200] flex flex-center items-center justify-center flex-col gap-6">
+             <div className="w-16 h-16 border-4 border-sid-green border-t-transparent rounded-full animate-spin" />
+             <p className="text-white font-black uppercase tracking-[0.3em] text-xs">Salvando no Workspace...</p>
+          </div>
+        )}
       </div>
     </>
   );

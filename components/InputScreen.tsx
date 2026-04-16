@@ -76,7 +76,7 @@ const InputScreen = ({ onGenerate }: InputScreenProps) => {
              <div className="w-8 h-8 rounded-xl bg-sid-green/10 flex items-center justify-center">
                 <Target className="text-sid-green w-4 h-4" />
              </div>
-             <span className="text-[9px] font-black uppercase tracking-[0.2em] text-sid-green/70">IA Strategic Engine</span>
+             <span className="text-[9px] font-black uppercase tracking-[0.2em] text-sid-green/70">SID ENGINE</span>
           </div>
           <CardTitle className="text-4xl font-serif font-black tracking-tight leading-tight">
             Parâmetros de <span className="text-sid-green italic">Simulação</span>

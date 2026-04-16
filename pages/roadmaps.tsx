@@ -2,27 +2,60 @@ import React, { useEffect, useState } from "react";
 import Head from "next/head";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, History, Trash2, ArrowRight, ArrowLeft, Layers } from "lucide-react";
+import { History, Trash2, ArrowRight, ArrowLeft, Layers, Calendar, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import RoadmapScreen from "@/components/RoadmapScreen";
 import { motion, AnimatePresence } from "framer-motion";
+import { roadmapService } from "@/services/roadmapService";
+import type { Session } from "@supabase/supabase-js";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
-export default function Roadmaps() {
-  const [savedSteps, setSavedSteps] = useState<any[]>([]);
-  const [viewMode, setViewMode] = useState<"LIST" | "DETAIL">("LIST");
+interface RoadmapsProps {
+  session: Session | null;
+}
+
+export default function Roadmaps({ session }: RoadmapsProps) {
+  const [roadmaps, setRoadmaps] = useState<any[]>([]);
+  const [selectedRoadmap, setSelectedRoadmap] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchRoadmaps = async () => {
+    if (!session?.user?.id) return;
+    setLoading(true);
+    try {
+      const data = await roadmapService.getUserRoadmaps(session.user.id);
+      setRoadmaps(data || []);
+    } catch (err) {
+      console.error("Erro ao buscar roadmaps:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const data = localStorage.getItem("latest_roadmap");
-    if (data) {
-      setSavedSteps(JSON.parse(data));
-    }
-  }, []);
+    fetchRoadmaps();
+  }, [session]);
 
-  const clear = () => {
-    localStorage.removeItem("latest_roadmap");
-    setSavedSteps([]);
-    setViewMode("LIST");
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm("Tem certeza que deseja excluir esta simulação?")) return;
+    try {
+      await roadmapService.deleteRoadmap(id);
+      setRoadmaps(prev => prev.filter(r => r.id !== id));
+    } catch (err) {
+      alert("Erro ao excluir roadmap.");
+    }
   };
+
+  if (loading && !selectedRoadmap) {
+    return (
+      <div className="max-w-6xl mx-auto py-32 flex flex-col items-center justify-center gap-6">
+         <div className="w-12 h-12 border-4 border-sid-green border-t-transparent rounded-full animate-spin" />
+         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Consultando Banco de Dados SID...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto py-12 px-6 space-y-12">
@@ -31,7 +64,7 @@ export default function Roadmaps() {
       </Head>
 
       <AnimatePresence mode="wait">
-        {viewMode === "LIST" ? (
+        {!selectedRoadmap ? (
           <motion.div 
             key="list"
             initial={{ opacity: 0, scale: 0.98 }}
@@ -39,85 +72,84 @@ export default function Roadmaps() {
             exit={{ opacity: 0, x: -20 }}
             className="space-y-12"
           >
-            <div className="flex items-center justify-between border-b pb-10">
+            <div className="flex flex-col md:flex-row md:items-center justify-between border-b pb-10 gap-6">
               <div className="space-y-2">
-                <h1 className="text-5xl font-serif font-black tracking-tight">Meus Roadmaps</h1>
-                <p className="text-slate-400 text-lg font-medium">Histórico de simulações tecnológicas salvas.</p>
+                <h1 className="text-5xl font-serif font-black tracking-tight">Workspace de <span className="text-sid-green">Estratégias</span></h1>
+                <p className="text-slate-400 text-lg font-medium">Histórico persistente de simulações tecnológicas.</p>
               </div>
-              {savedSteps.length > 0 && (
-                <Button variant="ghost" onClick={clear} className="text-slate-400 hover:text-red-500 font-bold h-12 rounded-xl">
-                  <Trash2 size={18} className="mr-2" /> Limpar Histórico
-                </Button>
-              )}
+              <div className="flex items-center gap-4 bg-slate-100/50 p-2 rounded-2xl border border-slate-100">
+                 <div className="px-6 text-center">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Total Salvo</p>
+                    <p className="text-xl font-black">{roadmaps.length}</p>
+                 </div>
+              </div>
             </div>
 
-            {savedSteps.length === 0 ? (
+            {roadmaps.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-28 bg-slate-50/50 rounded-[4rem] border-4 border-dashed border-slate-100 transition-all hover:bg-slate-50">
                 <div className="w-24 h-24 rounded-[2.5rem] bg-white flex items-center justify-center border border-slate-100 mb-8 shadow-xl">
                   <History className="text-slate-200" size={40} />
                 </div>
-                <p className="text-2xl font-serif font-black text-slate-400">Nenhuma simulação encontrada.</p>
-                <p className="text-xs text-slate-300 mt-3 uppercase tracking-[0.3em] font-black">Inicie sua jornada no simulador</p>
+                <p className="text-2xl font-serif font-black text-slate-400">Nenhuma simulação persistida.</p>
+                <p className="text-xs text-slate-300 mt-3 uppercase tracking-[0.3em] font-black">As simulações concluídas aparecerão aqui</p>
                 <Button
-                  variant="outline"
-                  className="mt-10 rounded-2xl border-slate-200 font-black tracking-widest text-[10px] uppercase h-14 px-8"
-                  render={<a href="/" />}
-                  nativeButton={false}
+                  className="mt-10 rounded-2xl bg-sid-black text-white hover:bg-slate-800 font-black tracking-widest text-[10px] uppercase h-14 px-8"
+                  onClick={() => window.location.href = "/"}
                 >
                   Voltar ao Simulador
                 </Button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-8">
-                <Card className="rounded-[3rem] border-4 border-slate-50 overflow-hidden shadow-2xl transition-all group hover:border-sid-green/20 bg-white">
-                  <CardHeader className="bg-slate-50/80 p-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <Badge className="bg-sid-green text-sid-black font-black text-[10px] px-3 py-1 rounded-lg">ATIVA</Badge>
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Sessão de Planejamento Local</span>
-                      </div>
-                      <CardTitle className="text-3xl font-serif font-black tracking-tight">Estratégia de Descarbonização #1</CardTitle>
-                    </div>
-                    <div className="flex items-center gap-10 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                       <div className="text-center">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Passos</p>
-                          <p className="text-xl font-black text-sid-black">{savedSteps.length}</p>
+              <div className="grid grid-cols-1 gap-6">
+                {roadmaps.map((r) => (
+                  <Card 
+                    key={r.id} 
+                    onClick={() => setSelectedRoadmap(r)}
+                    className="rounded-[2.5rem] border border-slate-100 overflow-hidden shadow-sm transition-all group hover:border-sid-green/30 bg-white cursor-pointer hover:shadow-2xl hover:-translate-y-1"
+                  >
+                    <div className="flex flex-col md:flex-row items-center">
+                       <div className="w-full md:w-16 h-12 md:h-auto bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-sid-green group-hover:text-sid-black transition-colors">
+                          <Layers size={20} />
                        </div>
-                       <div className="h-10 w-px bg-slate-200" />
-                       <div className="text-center">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Finalização</p>
-                          <p className="text-xl font-black text-sid-black">{savedSteps[savedSteps.length - 1].endYear}</p>
-                       </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-10">
-                    <div className="flex items-center gap-6 overflow-x-auto pb-6 scrollbar-hide">
-                      {savedSteps.map((step, idx) => (
-                        <React.Fragment key={idx}>
-                          <div className="flex-shrink-0 bg-slate-50 border border-slate-100 p-6 rounded-[1.5rem] shadow-sm min-w-[220px] transition-transform group-hover:scale-[1.02] hover:bg-white hover:border-sid-green/20">
-                            <div className="flex items-center gap-2 mb-3">
-                               <div className="w-6 h-6 rounded-lg bg-sid-green/10 flex items-center justify-center">
-                                  <Layers size={12} className="text-sid-green" />
-                               </div>
-                               <p className="text-[10px] font-black text-sid-green uppercase tracking-widest">{step.startYear}-{step.endYear}</p>
-                            </div>
-                            <p className="text-sm font-black text-slate-800 line-clamp-1 font-serif">{step.technology.name}</p>
+                       
+                       <div className="flex-1 p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 w-full">
+                          <div className="space-y-1">
+                             <div className="flex items-center gap-3 mb-1">
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{format(new Date(r.created_at), "dd 'de' MMMM, yyyy", { locale: ptBR })}</span>
+                                <div className="w-1 h-1 rounded-full bg-slate-200" />
+                                <span className="text-[9px] font-black text-sid-green uppercase tracking-widest">{r.roadmap_steps.length} Ciclos</span>
+                             </div>
+                             <CardTitle className="text-2xl font-serif font-black tracking-tight">{r.title}</CardTitle>
                           </div>
-                          {idx < savedSteps.length - 1 && <ArrowRight size={18} className="text-slate-200 flex-shrink-0" />}
-                        </React.Fragment>
-                      ))}
+
+                          <div className="flex items-center gap-8">
+                             <div className="hidden lg:flex items-center gap-4">
+                                {r.roadmap_steps.slice(0, 3).map((step: any, idx: number) => (
+                                   <div key={idx} className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-[10px] font-black text-slate-400 overflow-hidden" title={step.technologies.name}>
+                                      {step.technologies.name.slice(0, 2).toUpperCase()}
+                                   </div>
+                                ))}
+                                {r.roadmap_steps.length > 3 && <div className="text-[10px] font-black text-slate-300">+{r.roadmap_steps.length - 3}</div>}
+                             </div>
+                             
+                             <div className="flex items-center gap-3">
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-xl"
+                                  onClick={(e) => handleDelete(r.id, e)}
+                                >
+                                   <Trash2 size={18} />
+                                </Button>
+                                <div className="w-12 h-12 rounded-2xl bg-sid-black text-white flex items-center justify-center group-hover:bg-sid-green group-hover:text-sid-black transition-all">
+                                   <ChevronRight size={20} />
+                                </div>
+                             </div>
+                          </div>
+                       </div>
                     </div>
-                    <div className="mt-12 pt-8 border-t border-slate-50 flex justify-end">
-                      <Button 
-                        onClick={() => setViewMode("DETAIL")}
-                        size="lg"
-                        className="rounded-2xl border-sid-black bg-sid-black font-black uppercase tracking-widest text-[10px] h-16 px-12 text-white hover:bg-slate-800 shadow-xl transition-all active:scale-95"
-                      >
-                         Visualizar Detalhes do Roadmap
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                  </Card>
+                ))}
               </div>
             )}
           </motion.div>
@@ -132,22 +164,44 @@ export default function Roadmaps() {
             <div className="flex items-center gap-6 mb-10">
                <Button 
                 variant="ghost" 
-                onClick={() => setViewMode("LIST")}
+                onClick={() => setSelectedRoadmap(null)}
                 className="w-12 h-12 rounded-2xl bg-slate-100 hover:bg-sid-green hover:text-white transition-all p-0 flex items-center justify-center group"
                >
                   <ArrowLeft size={24} className="group-hover:-translate-x-1 transition-transform" />
                </Button>
                <div>
-                  <h2 className="text-3xl font-serif font-black tracking-tight">Análise Detalhada</h2>
-                  <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Visualização de Sessão Histórica</p>
+                  <h2 className="text-3xl font-serif font-black tracking-tight">{selectedRoadmap.title}</h2>
+                  <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Análise Detalhada da Estratégia Persistida</p>
                </div>
             </div>
 
             <RoadmapScreen 
-              steps={savedSteps} 
+              steps={selectedRoadmap.roadmap_steps.map((s: any) => ({
+                id: s.id,
+                startYear: s.start_year,
+                endYear: s.end_year,
+                technology: {
+                  id: s.technologies.id,
+                  name: s.technologies.name,
+                  description: s.technologies.description,
+                  mitigationPotential: s.technologies.mitigation_potential,
+                  economicViability: {
+                    capex: Number(s.technologies.capex),
+                    opex: Number(s.technologies.opex),
+                    abatementCost: Number(s.technologies.abatement_cost),
+                    roi: Number(s.technologies.roi),
+                    paybackPeriod: s.technologies.payback_period,
+                  },
+                  implementation: {
+                    trl: s.technologies.trl,
+                    challenges: s.technologies.challenges,
+                  },
+                  marketCompetition: s.technologies.market_competition
+                }
+              }))} 
               onAddNextCycle={() => {}}
               onRemoveStep={() => {}}
-              targetYear={2050}
+              targetYear={selectedRoadmap.target_year}
               readOnly={true}
             />
           </motion.div>

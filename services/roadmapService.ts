@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { RoadmapDTO, TechnologyDTO } from "@/lib/validators";
-import { RoadmapStep } from "@/types/decarbonization";
+import { Technology } from "@/types/decarbonization";
 
 /**
  * Service to handle all interactions with the Supabase database
@@ -10,30 +10,66 @@ export const roadmapService = {
   // --- Technologies ---
   
   /**
-   * Fetches the full library of technologies from Supabase
+   * Upserts a technology into the database by name.
+   * This ensures that AI-generated technologies are stored before being linked.
    */
-  async getTechnologies(): Promise<TechnologyDTO[]> {
+  async upsertTechnology(tech: Technology): Promise<string> {
+    // We attempt to find by name first to avoid duplicates
+    const { data: existing } = await supabase
+      .from('technologies')
+      .select('id')
+      .eq('name', tech.name)
+      .maybeSingle();
+
+    if (existing) return existing.id;
+
+    // Insert new technology
     const { data, error } = await supabase
       .from('technologies')
-      .select('*')
-      .order('trl', { ascending: false });
+      .insert({
+        name: tech.name,
+        description: tech.description,
+        mitigation_potential: tech.mitigationPotential,
+        capex: tech.economicViability.capex,
+        opex: tech.economicViability.opex,
+        abatement_cost: tech.economicViability.abatementCost,
+        roi: tech.economicViability.roi,
+        payback_period: tech.economicViability.paybackPeriod,
+        trl: tech.implementation.trl,
+        challenges: tech.implementation.challenges,
+        market_competition: tech.marketCompetition
+      })
+      .select()
+      .single();
 
     if (error) throw error;
-    return data as any; // Mapper might be needed for camelCase translation
+    return data.id;
   },
 
   // --- Roadmaps ---
 
   /**
-   * Saves a full roadmap (metadata + steps) to Supabase
+   * Saves a full roadmap (metadata + steps) to Supabase.
+   * It handles the logic of upserting missing technologies first.
    */
-  async saveRoadmap(roadmap: RoadmapDTO, userId: string): Promise<string> {
-    // 1. Insert the Roadmap metadata
+  async saveFullRoadmap(roadmap: any, userId: string): Promise<string> {
+    // 1. First, ensure all technologies in the steps are in the database
+    const stepWithTechIds = await Promise.all(
+      roadmap.steps.map(async (step: any) => {
+        const techId = await this.upsertTechnology(step.technology);
+        return {
+          ...step,
+          tech_id: techId
+        };
+      })
+    );
+
+    // 2. Insert the Roadmap metadata
     const { data: roadmapData, error: roadmapError } = await supabase
       .from('roadmaps')
       .insert({
         user_id: userId,
-        title: roadmap.title,
+        title: roadmap.title || 'Estratégia SID Engine',
         target_year: roadmap.targetYear,
         net_zero_target: roadmap.netZeroTarget,
         capex_budget: roadmap.capexBudget,
@@ -44,10 +80,10 @@ export const roadmapService = {
 
     if (roadmapError) throw roadmapError;
 
-    // 2. Insert all steps
-    const stepsToInsert = roadmap.steps.map(step => ({
+    // 3. Insert all steps
+    const stepsToInsert = stepWithTechIds.map(step => ({
       roadmap_id: roadmapData.id,
-      tech_id: step.technologyId,
+      tech_id: step.tech_id,
       start_year: step.startYear,
       end_year: step.endYear
     }));

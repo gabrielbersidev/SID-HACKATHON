@@ -1,4 +1,4 @@
-import React from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Dialog,
   DialogContent,
@@ -27,6 +27,7 @@ import {
   Calendar,
   Layers
 } from "lucide-react";
+import Logo from "@/components/Logo";
 
 interface ComparisonModalProps {
   isOpen: boolean;
@@ -51,20 +52,33 @@ const ComparisonModal = ({ isOpen, onClose, technologies, onSelect, period, isLo
       <DialogContent className="max-w-[95vw] md:max-w-6xl max-h-[90vh] overflow-hidden flex flex-col bg-white border-none shadow-[0_40px_100px_rgba(0,0,0,0.3)] z-[100] p-0 rounded-[2.5rem]">
         {isLoading ? (
           <div className="p-24 flex flex-col items-center justify-center space-y-8 min-h-[500px]">
-             <div className="relative">
-                <div className="absolute inset-0 bg-sid-green/20 rounded-full blur-2xl animate-pulse" />
-                <div className="relative w-20 h-20 rounded-3xl bg-sid-black flex items-center justify-center shadow-2xl ring-1 ring-white/20">
-                  <Cpu className="text-sid-green animate-spin" size={32} />
-                </div>
+             <div className="relative group">
+                <div className="absolute inset-0 bg-sid-green/30 rounded-full blur-3xl animate-pulse" />
+                <motion.div 
+                  animate={{ 
+                    rotateY: [0, 360],
+                    filter: ["brightness(1)", "brightness(1.5)", "brightness(1)"] 
+                  }}
+                  transition={{ 
+                    duration: 4, 
+                    repeat: Infinity, 
+                    ease: "easeInOut" 
+                  }}
+                  className="relative flex items-center justify-center"
+                >
+                   <Logo size="lg" />
+                </motion.div>
              </div>
              <div className="text-center space-y-3">
-                <h3 className="text-2xl font-serif font-black tracking-tight">IA Estrategista Analisando...</h3>
-                <div className="flex flex-col items-center gap-1">
-                   <p className="text-slate-400 font-medium">Cruzando dados de investimento vs mitigação</p>
-                   <div className="flex gap-1">
-                      <div className="w-1.5 h-1.5 rounded-full bg-sid-green animate-bounce" />
-                      <div className="w-1.5 h-1.5 rounded-full bg-sid-green animate-bounce [animation-delay:0.2s]" />
-                      <div className="w-1.5 h-1.5 rounded-full bg-sid-green animate-bounce [animation-delay:0.4s]" />
+                <h3 className="text-2xl font-serif font-black tracking-tight text-sid-black">
+                  <span className="text-sid-green">SID ENGINE</span> Analisando...
+                </h3>
+                <div className="flex flex-col items-center gap-2">
+                   <p className="text-slate-400 font-medium text-sm">Cruzando dados setoriais e eficiência climática</p>
+                   <div className="flex gap-1.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-sid-green animate-bounce [animation-duration:1s]" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-sid-green animate-bounce [animation-duration:1s] [animation-delay:0.2s]" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-sid-green animate-bounce [animation-duration:1s] [animation-delay:0.4s]" />
                    </div>
                 </div>
              </div>

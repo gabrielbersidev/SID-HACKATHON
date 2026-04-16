@@ -208,7 +208,7 @@ export default function Login() {
         {/* Brand Footer */}
         <div className="mt-12 flex items-center justify-center px-8 text-[9px] font-black text-slate-400 uppercase tracking-[0.3em]">
            <div className="flex items-center gap-2">
-              <Cpu size={14} /> SID Intelligence Engine
+              <Cpu size={14} /> SID ENGINE 2.0
            </div>
         </div>
       </motion.div>

@@ -13,16 +13,21 @@ interface RoadmapScreenProps {
   onRemoveStep: (id: string) => void;
   targetYear: number;
   readOnly?: boolean;
+  onSave?: () => void;
 }
 
-const RoadmapScreen = ({ steps, onAddNextCycle, onRemoveStep, targetYear, readOnly = false }: RoadmapScreenProps) => {
+const RoadmapScreen = ({ steps, onAddNextCycle, onRemoveStep, targetYear, readOnly = false, onSave }: RoadmapScreenProps) => {
   const [showReport, setShowReport] = useState(false);
   const lastYear = steps.length > 0 ? steps[steps.length - 1].endYear : 2026;
   const isComplete = lastYear >= targetYear;
 
   const handleSave = () => {
-    localStorage.setItem("latest_roadmap", JSON.stringify(steps));
-    alert("Roadmap salvo temporariamente no seu workspace!");
+    if (onSave) {
+      onSave();
+    } else {
+      localStorage.setItem("latest_roadmap", JSON.stringify(steps));
+      alert("Roadmap salvo temporariamente!");
+    }
   };
 
   return (
@@ -162,7 +167,7 @@ const RoadmapScreen = ({ steps, onAddNextCycle, onRemoveStep, targetYear, readOn
                <PlusCircle className="w-10 h-10 text-slate-200 group-hover:text-white transition-colors" />
             </div>
             <p className="mt-8 text-xl font-black text-slate-800 group-hover:text-sid-green transition-colors">Próximo Ciclo</p>
-            <p className="mt-2 text-[10px] text-slate-400 font-black uppercase tracking-[0.3em]">IA Strategy Engine</p>
+            <p className="mt-2 text-[10px] text-slate-400 font-black uppercase tracking-[0.3em]">SID ENGINE Platform</p>
             
             <div className="mt-10 px-6 py-2.5 rounded-full border border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] bg-white group-hover:border-sid-green/20">
                Simular Opções
@@ -230,7 +235,7 @@ const RoadmapScreen = ({ steps, onAddNextCycle, onRemoveStep, targetYear, readOn
                            ))}
                         </div>
                         <div className="flex justify-between mt-6 px-4">
-                           <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Início IA Simul</span>
+                           <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Início SID ENGINE</span>
                            <span className="text-xs font-serif italic text-sid-green font-black">Ciclo 2050 Aprovado</span>
                            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Objetivo Final</span>
                         </div>

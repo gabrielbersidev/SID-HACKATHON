@@ -76,8 +76,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const jsonString = text.replace(/```json/g, "").replace(/```/g, "").trim();
     const suggestions = JSON.parse(jsonString);
 
+    // Ensure valid UUIDs for all suggestions (AI often fails at this)
+    const suggestionsWithFix = Array.isArray(suggestions) 
+      ? suggestions.map(s => ({ ...s, id: crypto.randomUUID() }))
+      : [];
+
     // Validate with Zod
-    const validated = z.array(TechnologySchema).parse(suggestions);
+    const validated = z.array(TechnologySchema).parse(suggestionsWithFix);
 
     return res.status(200).json(validated);
   } catch (error: any) {
