@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UserInputs } from "@/types/decarbonization";
-import { CalendarIcon, Info, TrendingUp, DollarSign, Target } from "lucide-react";
+import { CalendarIcon, Info, TrendingUp, DollarSign, Target, Flag } from "lucide-react";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
@@ -21,10 +22,18 @@ const InputScreen = ({ onGenerate }: InputScreenProps) => {
   const [capex, setCapex] = useState<string>("50000000");
   const [opex, setOpex] = useState<string>("5000000");
   const [maxAbatement, setMaxAbatement] = useState<number>(200);
+  const [targetYear, setTargetYear] = useState<string>("2050");
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date } | undefined>({
     from: new Date(2026, 0, 1),
     to: new Date(2030, 11, 31),
   });
+
+  // Sync targetYear with netZero selection
+  useEffect(() => {
+    if (netZero === "true") {
+      setTargetYear("2050");
+    }
+  }, [netZero]);
 
   const formatCurrency = (value: string) => {
     const num = value.replace(/\D/g, "");
@@ -54,7 +63,8 @@ const InputScreen = ({ onGenerate }: InputScreenProps) => {
       initialRoadmapPeriod: {
         startYear: dateRange.from.getFullYear(),
         endYear: dateRange.to.getFullYear(),
-      }
+      },
+      targetYear: Number(targetYear)
     });
   };
 
@@ -72,7 +82,7 @@ const InputScreen = ({ onGenerate }: InputScreenProps) => {
             Parâmetros de <span className="text-sid-green italic">Simulação</span>
           </CardTitle>
           <CardDescription className="text-sm text-slate-400 font-medium max-w-xl mt-2 leading-relaxed">
-            IA para determinar a trajetória tecnológica ideal.
+            Configure o horizonte temporal e limites financeiros da sua estratégia.
           </CardDescription>
         </CardHeader>
         
@@ -100,24 +110,43 @@ const InputScreen = ({ onGenerate }: InputScreenProps) => {
               )}>
                 <RadioGroupItem value="false" id="percent" className="w-4 h-4 border-2" />
                 <Label htmlFor="percent" className="flex-1 cursor-pointer">
-                  <span className="block text-sm font-black text-slate-900 leading-none">Redução Percentual</span>
+                  <span className="block text-sm font-black text-slate-900 leading-none">Meta Percentual Customizada</span>
                 </Label>
               </div>
             </RadioGroup>
 
             {netZero === "false" && (
-              <div className="pl-6 border-l-4 border-sid-green/20 space-y-3 animate-in slide-in-from-left-4 duration-500">
-                <Label htmlFor="meta-percent" className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground whitespace-nowrap">Volume de Redução (%)</Label>
-                <div className="relative max-w-[140px]">
-                  <Input 
-                    id="meta-percent"
-                    type="number" 
-                    min={0} max={100}
-                    value={percent}
-                    onChange={(e) => setPercent(Number(e.target.value))}
-                    className="h-10 text-xl font-black text-center border-2 border-slate-100 focus-visible:border-sid-green shadow-sm bg-white rounded-xl"
-                  />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 font-black text-sid-green/30 text-lg">%</span>
+              <div className="pl-6 border-l-4 border-sid-green/20 space-y-4 animate-in slide-in-from-left-4 duration-500">
+                <div className="space-y-2">
+                   <Label className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground">Volume de Redução (%)</Label>
+                   <div className="relative max-w-[120px]">
+                     <Input 
+                       type="number" 
+                       min={0} max={100}
+                       value={percent}
+                       onChange={(e) => setPercent(Number(e.target.value))}
+                       className="h-10 text-xl font-black text-center border-2 border-slate-100 focus-visible:border-sid-green rounded-xl"
+                     />
+                     <span className="absolute right-3 top-1/2 -translate-y-1/2 font-black text-sid-green/30 text-lg">%</span>
+                   </div>
+                </div>
+
+                <div className="space-y-2">
+                   <Label className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
+                     <Flag size={10} className="text-sid-green" /> Horizonte Final (Ano Alvo)
+                   </Label>
+                   <Select value={targetYear} onValueChange={(val) => setTargetYear(val || "2050")}>
+                     <SelectTrigger className="w-[140px] h-10 border-2 border-slate-100 font-black rounded-xl text-xs">
+                       <SelectValue placeholder="Ano Alvo" />
+                     </SelectTrigger>
+                     <SelectContent className="rounded-xl border-slate-100">
+                        <SelectItem value="2030" className="text-xs font-bold">2030</SelectItem>
+                        <SelectItem value="2035" className="text-xs font-bold">2035</SelectItem>
+                        <SelectItem value="2040" className="text-xs font-bold">2040</SelectItem>
+                        <SelectItem value="2045" className="text-xs font-bold">2045</SelectItem>
+                        <SelectItem value="2050" className="text-xs font-bold">2050</SelectItem>
+                     </SelectContent>
+                   </Select>
                 </div>
               </div>
             )}
@@ -126,8 +155,8 @@ const InputScreen = ({ onGenerate }: InputScreenProps) => {
           {/* Period Section */}
           <div className="space-y-6">
             <div className="space-y-2">
-               <Label className="text-base font-black text-slate-900 font-serif tracking-tight">Período Selecionado</Label>
-               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Prazos recomendados.</p>
+               <Label className="text-base font-black text-slate-900 font-serif tracking-tight">Ciclo de Início</Label>
+               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Prazos de implementação inicial.</p>
             </div>
             
             <div className="space-y-4">
@@ -151,7 +180,7 @@ const InputScreen = ({ onGenerate }: InputScreenProps) => {
                       dateRange.from.getFullYear()
                     )
                   ) : (
-                    <span className="text-muted-foreground">Período Especial</span>
+                    <span className="text-muted-foreground">Período Inicial</span>
                   )}
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0 border-none shadow-2xl rounded-[2rem] overflow-hidden" align="start">
@@ -168,15 +197,15 @@ const InputScreen = ({ onGenerate }: InputScreenProps) => {
                     locale={ptBR}
                     captionLayout="dropdown"
                     fromYear={2024}
-                    toYear={2050}
+                    toYear={Number(targetYear)}
                     className="p-4"
                   />
                 </PopoverContent>
               </Popover>
               <div className="bg-slate-50/80 p-4 rounded-xl flex gap-3 items-start border border-slate-100/50">
                  <Info size={16} className="text-sid-green flex-shrink-0 mt-0.5" />
-                 <p className="text-[9px] text-slate-500 leading-normal font-bold uppercase tracking-[0.1em]">
-                   O sistema comparará ROI para este intervalo de tempo específico.
+                 <p className="text-[9px] text-slate-500 leading-normal font-bold uppercase tracking-[0.15em]">
+                   Ao atingir o ano alvo ({targetYear}), o simulador apresentará o relatório final consolidado.
                  </p>
               </div>
             </div>
@@ -188,14 +217,14 @@ const InputScreen = ({ onGenerate }: InputScreenProps) => {
                 <div className="w-8 h-8 rounded-lg bg-sid-black flex items-center justify-center text-white shadow-lg">
                    <DollarSign size={16} />
                 </div>
-                <Label className="text-xl font-black font-serif tracking-tight pr-2">Capacidade Financeira</Label>
+                <Label className="text-xl font-black font-serif tracking-tight pr-2">Capacidade Financeira Anual</Label>
                 <div className="h-px flex-1 bg-slate-50" />
              </div>
              
              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-2">
                    <Label className="text-[9px] font-black uppercase tracking-[0.1em] text-slate-400">
-                      Budget CAPEX
+                      Budget CAPEX Máximo
                    </Label>
                    <Input
                      value={formatCurrency(capex)}
@@ -206,12 +235,12 @@ const InputScreen = ({ onGenerate }: InputScreenProps) => {
 
                 <div className="space-y-2">
                    <Label className="text-[9px] font-black uppercase tracking-[0.1em] text-slate-400">
-                      Custos OPEX
+                      Custos de OPEX
                    </Label>
                    <Input
                      value={formatCurrency(opex)}
                      onChange={(e) => handleCurrencyChange(e.target.value, setOpex)}
-                     className="h-12 text-xl font-black bg-slate-50/30 border-2 border-transparent focus-visible:bg-white focus-visible:border-sid-green/30 transition-all rounded-xl px-4"
+                     className="h-12 text-xl font-black bg-slate-50/30 border-2 border-transparent focus-visible:bg-white focus-visible:border-sid-green/40 transition-all rounded-xl px-4"
                    />
                 </div>
 
@@ -224,7 +253,7 @@ const InputScreen = ({ onGenerate }: InputScreenProps) => {
                         type="number"
                         value={maxAbatement}
                         onChange={(e) => setMaxAbatement(Number(e.target.value))}
-                        className="h-12 text-xl font-black bg-slate-50/30 border-2 border-transparent focus-visible:bg-white focus-visible:border-sid-green/30 transition-all rounded-xl px-4"
+                        className="h-12 text-xl font-black bg-slate-50/30 border-2 border-transparent focus-visible:bg-white focus-visible:border-sid-green/40 transition-all rounded-xl px-4"
                       />
                       <TrendingUp className="absolute right-4 top-1/2 -translate-y-1/2 text-sid-green/20" size={20} />
                    </div>
@@ -238,9 +267,9 @@ const InputScreen = ({ onGenerate }: InputScreenProps) => {
             onClick={handleGenerate}
             disabled={!capex || !opex}
             size="lg"
-            className="px-10 h-14 text-sm font-black uppercase tracking-[0.2em] bg-sid-black hover:bg-sid-green text-white rounded-[1.25rem] transition-all shadow-xl hover:-translate-y-1 group"
+            className="px-12 h-16 text-base font-black uppercase tracking-[0.2em] bg-sid-black hover:bg-sid-green text-white rounded-[1.25rem] transition-all shadow-xl hover:-translate-y-1 group"
           >
-            Gerar Matriz de Decisão
+            Iniciar Simulação de Roadmap
           </Button>
         </CardFooter>
       </Card>

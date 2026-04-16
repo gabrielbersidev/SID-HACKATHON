@@ -8,10 +8,9 @@ import ComparisonModal from "@/components/ComparisonModal";
 import { UserInputs, Technology, RoadmapStep } from "@/types/decarbonization";
 import { 
   generateInitialCycleSuggestions, 
-  generateNextCycleSuggestions, 
-  getInitialRoadmap, 
-  addRoadmapStep 
+  generateNextCycleSuggestions 
 } from "@/data/mock-data";
+import { strategyEngine } from "@/lib/engine";
 
 type WorkflowState = "INPUT" | "LOADING" | "BUILDER";
 
@@ -31,7 +30,7 @@ export default function Home() {
     // Simulate engine processing
     setTimeout(() => {
       const initialSuggestions = generateInitialCycleSuggestions(newInputs);
-      setSuggestions(initialSuggestions);
+      setSuggestions(initialSuggestions as any);
       setPendingPeriod({
         startYear: newInputs.initialRoadmapPeriod.startYear,
         endYear: newInputs.initialRoadmapPeriod.endYear
@@ -44,26 +43,14 @@ export default function Home() {
   const handleSelectTechnology = (tech: Technology) => {
     if (!inputs || !pendingPeriod) return;
 
-    if (roadmapSteps.length === 0) {
-      // First Tech (or restarting after deletion)
-      const firstRoadmap = [{
-        id: `step-${tech.id}-${pendingPeriod.startYear}`,
-        technology: tech,
-        startYear: pendingPeriod.startYear,
-        endYear: pendingPeriod.endYear,
-      }];
-      setRoadmapSteps(firstRoadmap);
-    } else {
-      // Subsequent Tech
-      const nextRoadmap = addRoadmapStep(
-        roadmapSteps, 
-        tech, 
-        pendingPeriod.startYear, 
-        pendingPeriod.endYear
-      );
-      setRoadmapSteps(nextRoadmap);
-    }
-    
+    const newStep: RoadmapStep = {
+      id: `step-${tech.id}-${pendingPeriod.startYear}`,
+      technology: tech,
+      startYear: pendingPeriod.startYear,
+      endYear: pendingPeriod.endYear,
+    };
+
+    setRoadmapSteps(prev => [...prev, newStep]);
     setIsModalOpen(false);
     setPendingPeriod(null);
   };
@@ -74,22 +61,22 @@ export default function Home() {
     if (roadmapSteps.length === 0) {
       // Re-initialize from user inputs if timeline was empty
       const initialSuggestions = generateInitialCycleSuggestions(inputs);
-      setSuggestions(initialSuggestions);
+      setSuggestions(initialSuggestions as any);
       setPendingPeriod({
         startYear: inputs.initialRoadmapPeriod.startYear,
         endYear: inputs.initialRoadmapPeriod.endYear
       });
     } else {
-      // Standard next cycle
+      // Standard next cycle using Engine prediction
       const lastStep = roadmapSteps[roadmapSteps.length - 1];
-      const periodDuration = lastStep.endYear - lastStep.startYear;
-      const nextSuggestions = generateNextCycleSuggestions(lastStep.endYear, inputs);
+      const nextPeriod = strategyEngine.predictNextPeriod(lastStep.endYear, inputs.targetYear);
       
-      setSuggestions(nextSuggestions);
-      setPendingPeriod({
-        startYear: lastStep.endYear,
-        endYear: lastStep.endYear + periodDuration
-      });
+      if (!nextPeriod) return; // Horizon reached
+
+      const nextSuggestions = generateNextCycleSuggestions(lastStep.endYear, inputs, roadmapSteps);
+      
+      setSuggestions(nextSuggestions as any);
+      setPendingPeriod(nextPeriod);
     }
     
     setIsModalOpen(true);
@@ -142,6 +129,7 @@ export default function Home() {
                 steps={roadmapSteps} 
                 onAddNextCycle={handleRequestNextCycle}
                 onRemoveStep={handleRemoveStep}
+                targetYear={inputs?.targetYear || 2050}
               />
             </motion.div>
           )}

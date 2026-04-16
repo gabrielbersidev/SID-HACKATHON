@@ -7,6 +7,7 @@ export interface UserInputs {
   minTrl: number; // TRL mínimo preferencial
   maxTrl: number; // TRL máximo preferencial
   initialRoadmapPeriod: { startYear: number; endYear: number }; // Período do primeiro ciclo
+  targetYear: number; // Horizonte final do planejamento (ex: 2050)
 }
 
 export interface Technology {

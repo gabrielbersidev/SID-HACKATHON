@@ -1,8 +1,13 @@
-import { Technology, UserInputs, RoadmapStep } from "../types/decarbonization";
+import { TechnologyDTO, UserInputsDTO, RoadmapStepDTO } from "../lib/validators";
+import { strategyEngine } from "../lib/engine";
 
-export const mockTechnologies: Technology[] = [
+/**
+ * MOCK DATA SEEDER
+ * These will be moved to the Supabase 'technologies' table.
+ */
+export const mockTechnologies: TechnologyDTO[] = [
   {
-    id: "tech-1",
+    id: "00000000-0000-0000-0000-000000000001",
     name: "Captura Direta de Ar (DAC)",
     description: "Tecnologia que remove CO2 diretamente da atmosfera utilizando ciclos termoquímicos.",
     mitigationPotential: 500000,
@@ -15,12 +20,11 @@ export const mockTechnologies: Technology[] = [
     },
     implementation: {
       trl: 7,
-      challenges: ["Alto Consumo de Energia", "Escalabilidade", "Custo Inicial"],
+      challenges: ["Consumo de Energia", "Custo Inicial"],
     },
-    marketCompetition: "Emergente, com poucas soluções em larga escala. Principais players: Carbon Engineering, Climeworks.",
   },
   {
-    id: "tech-2",
+    id: "00000000-0000-0000-0000-000000000002",
     name: "Eletrificação de Frotas",
     description: "Substituição progressiva de veículos a combustão por veículos 100% elétricos.",
     mitigationPotential: 150000,
@@ -33,14 +37,13 @@ export const mockTechnologies: Technology[] = [
     },
     implementation: {
       trl: 9,
-      challenges: ["Infraestrutura de Recarga", "Custo de Aquisição", "Autonomia Limitada"],
+      challenges: ["Infraestrutura de Recarga"],
     },
-    marketCompetition: "Mercado maduro com intensa competição. Players: Tesla, BYD, Volkswagen, Hyundai.",
   },
   {
-    id: "tech-3",
+    id: "00000000-0000-0000-0000-000000000003",
     name: "Biocombustíveis Avançados",
-    description: "Produção de combustíveis de segunda geração a partir de biomassa sustentável e resíduos.",
+    description: "Produção de combustíveis de segunda geração a partir de biomassa sustentável.",
     mitigationPotential: 300000,
     economicViability: {
       capex: 70000000,
@@ -51,14 +54,13 @@ export const mockTechnologies: Technology[] = [
     },
     implementation: {
       trl: 8,
-      challenges: ["Disponibilidade de Matéria-Prima", "Otimização de Processos", "Certificação de Sustentabilidade"],
+      challenges: ["Disponibilidade de Matéria-Prima"],
     },
-    marketCompetition: "Crescente. Foco em sustentabilidade e rastreabilidade. Players: Neste, Clariant, Gevo.",
   },
   {
-    id: "tech-4",
-    name: "Painéis Solares Fotovoltaicos",
-    description: "Instalação de painéis solares de alta eficiência (>22%) para geração de energia renovável local.",
+    id: "00000000-0000-0000-0000-000000000004",
+    name: "Painéis Fotovoltaicos",
+    description: "Instalação de painéis solares de alta eficiência (>22%) localmente.",
     mitigationPotential: 120000,
     economicViability: {
       capex: 10000000,
@@ -69,93 +71,28 @@ export const mockTechnologies: Technology[] = [
     },
     implementation: {
       trl: 9,
-      challenges: ["Espaço Disponível", "Variabilidade de Irradiação Solar", "Armazenamento de Energia"],
+      challenges: ["Espaço Disponível"],
     },
-    marketCompetition: "Mercado altamente competitivo e consolidado. Players globais: JinkoSolar, Longi, Sunrun.",
-  },
-  {
-    id: "tech-5",
-    name: "Captura e Armazenamento de Carbono (CCS)",
-    description: "Tecnologia de captura de CO2 em fontes pontuais (indústria, energia) com armazenamento geológico permanente.",
-    mitigationPotential: 450000,
-    economicViability: {
-      capex: 250000000,
-      opex: 8000000,
-      abatementCost: 180,
-      roi: 0.05,
-      paybackPeriod: 15,
-    },
-    implementation: {
-      trl: 8,
-      challenges: ["Regulamentação de Armazenamento", "Viabilidade Econômica", "Monitoramento a Longo Prazo"],
-    },
-    marketCompetition: "Em desenvolvimento. Incentivos governamentais crescentes. Players: ExxonMobil, Shell, Equinor.",
-  },
-  {
-    id: "tech-6",
-    name: "Hidrogênio Verde",
-    description: "Produção de hidrogênio via eletrólise de água com eletricidade de fontes renováveis.",
-    mitigationPotential: 350000,
-    economicViability: {
-      capex: 180000000,
-      opex: 6000000,
-      abatementCost: 150,
-      roi: 0.11,
-      paybackPeriod: 10,
-    },
-    implementation: {
-      trl: 7,
-      challenges: ["Custo da Eletrólise", "Infraestrutura de Distribuição", "Armazenamento Seguro"],
-    },
-    marketCompetition: "Setor emergente com forte apoio governamental. Players: Siemens, NEL, ITM Power.",
-  },
-  {
-    id: "tech-7",
-    name: "Bombas de Calor Industriais",
-    description: "Substituição de caldeiras a gás por bombas de calor para aquecimento de processos industriais.",
-    mitigationPotential: 200000,
-    economicViability: {
-      capex: 35000000,
-      opex: 1500000,
-      abatementCost: 65,
-      roi: 0.18,
-      paybackPeriod: 6,
-    },
-    implementation: {
-      trl: 8,
-      challenges: ["Temperatura Requerida", "Integração com Infraestrutura Existente", "Eficiência Sazonal"],
-    },
-    marketCompetition: "Mercado crescente. Players: Bosch, Carrier, Daikin, Mitsubishi.",
   },
 ];
 
-export const generateInitialCycleSuggestions = (inputs: UserInputs): Technology[] => {
-  // Simular seleção de 3 tecnologias baseadas nos inputs
-  return mockTechnologies.slice(0, 3);
+/**
+ * REFACTORED ENGINE WRAPPERS
+ * These now bridge the UI to the Strategy Engine.
+ * In Phase 10, these will fetch from 'roadmapService'.
+ */
+
+export const generateInitialCycleSuggestions = (inputs: UserInputsDTO): TechnologyDTO[] => {
+  return strategyEngine.getSuggestions(mockTechnologies, inputs);
 };
 
-export const generateNextCycleSuggestions = (currentEndYear: number, inputs: UserInputs): Technology[] => {
-  // Simular tecnologias para o próximo período (ex: TRL maior, custos menores)
-  return mockTechnologies.slice(3, 6);
-};
+export const generateNextCycleSuggestions = (lastEndYear: number, inputs: UserInputsDTO, currentSteps: any[]): TechnologyDTO[] => {
+  // Convert steps to DTOs for engine logic
+  const stepsDTO: RoadmapStepDTO[] = currentSteps.map(s => ({
+    technologyId: s.technology.id,
+    startYear: s.startYear,
+    endYear: s.endYear
+  }));
 
-export const getInitialRoadmap = (selectedTech: Technology, inputs: UserInputs): RoadmapStep[] => {
-  return [{
-    id: `step-${selectedTech.id}-${inputs.initialRoadmapPeriod.startYear}`,
-    technology: selectedTech,
-    startYear: inputs.initialRoadmapPeriod.startYear,
-    endYear: inputs.initialRoadmapPeriod.endYear,
-  }];
-};
-
-export const addRoadmapStep = (currentRoadmap: RoadmapStep[], selectedTech: Technology, nextStartYear: number, nextEndYear: number): RoadmapStep[] => {
-  return [
-    ...currentRoadmap,
-    {
-      id: `step-${selectedTech.id}-${nextStartYear}`,
-      technology: selectedTech,
-      startYear: nextStartYear,
-      endYear: nextEndYear,
-    },
-  ];
+  return strategyEngine.getSuggestions(mockTechnologies, inputs, stepsDTO);
 };

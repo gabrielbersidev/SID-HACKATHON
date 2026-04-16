@@ -147,6 +147,7 @@ export default function Roadmaps() {
               steps={savedSteps} 
               onAddNextCycle={() => {}}
               onRemoveStep={() => {}}
+              targetYear={2050}
               readOnly={true}
             />
           </motion.div>

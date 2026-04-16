@@ -11,13 +11,14 @@ interface RoadmapScreenProps {
   steps: RoadmapStep[];
   onAddNextCycle: () => void;
   onRemoveStep: (id: string) => void;
+  targetYear: number;
   readOnly?: boolean;
 }
 
-const RoadmapScreen = ({ steps, onAddNextCycle, onRemoveStep, readOnly = false }: RoadmapScreenProps) => {
+const RoadmapScreen = ({ steps, onAddNextCycle, onRemoveStep, targetYear, readOnly = false }: RoadmapScreenProps) => {
   const [showReport, setShowReport] = useState(false);
   const lastYear = steps.length > 0 ? steps[steps.length - 1].endYear : 2026;
-  const isComplete = lastYear >= 2050;
+  const isComplete = lastYear >= targetYear;
 
   const handleSave = () => {
     localStorage.setItem("latest_roadmap", JSON.stringify(steps));

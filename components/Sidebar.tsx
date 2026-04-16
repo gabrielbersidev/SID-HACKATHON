@@ -14,9 +14,24 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import Logo from "./Logo";
+import { supabase } from "@/lib/supabase";
+import type { Session } from "@supabase/supabase-js";
 
-const Sidebar = () => {
+interface SidebarProps {
+  session?: Session | null;
+}
+
+const Sidebar = ({ session }: SidebarProps) => {
   const router = useRouter();
+
+  const userName = session?.user?.user_metadata?.full_name || session?.user?.email?.split("@")[0] || "Usuário";
+  const userEmail = session?.user?.email || "";
+  const userInitials = userName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/login");
+  };
 
   const navItems = [
     { label: "Simulador", icon: LayoutDashboard, href: "/" },
@@ -70,17 +85,18 @@ const Sidebar = () => {
            
            <div className="flex items-center gap-3 px-4 mb-4">
               <div className="w-10 h-10 rounded-2xl bg-sid-black flex items-center justify-center text-[10px] font-black text-white shadow-lg ring-2 ring-white">
-                GB
+                {userInitials}
               </div>
               <div className="overflow-hidden">
-                <p className="text-xs font-black text-slate-900 truncate">Gabriel Bersi</p>
-                <p className="text-[10px] text-slate-400 font-bold truncate">Executivo</p>
+                <p className="text-xs font-black text-slate-900 truncate">{userName}</p>
+                <p className="text-[10px] text-slate-400 font-bold truncate">{userEmail}</p>
               </div>
            </div>
 
            <Button 
             variant="ghost" 
             className="w-full justify-start text-[10px] font-black h-10 text-slate-400 hover:text-red-500 hover:bg-red-50 px-4 rounded-xl transition-all"
+            onClick={handleLogout}
            >
             <LogOut size={14} className="mr-2" />
             Sair da Sessão
