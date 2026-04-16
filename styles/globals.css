@@ -81,3 +81,15 @@
     @apply bg-black/40 backdrop-blur-sm;
   }
 }
+
+/* Hide Next.js Dev Badge & Overlays */
+nextjs-portal,
+#nextjs-portal,
+#nextjs-build-watcher,
+.nextjs-build-watcher,
+[data-nextjs-toast],
+[data-nextjs-portal] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}

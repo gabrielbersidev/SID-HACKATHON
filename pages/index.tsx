@@ -21,6 +21,7 @@ export default function Home() {
   const [roadmapSteps, setRoadmapSteps] = useState<RoadmapStep[]>([]);
   const [suggestions, setSuggestions] = useState<Technology[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [pendingPeriod, setPendingPeriod] = useState<{ startYear: number; endYear: number } | null>(null);
 
   // Flow handlers
   const handleStartSim = (newInputs: UserInputs) => {
@@ -31,40 +32,66 @@ export default function Home() {
     setTimeout(() => {
       const initialSuggestions = generateInitialCycleSuggestions(newInputs);
       setSuggestions(initialSuggestions);
+      setPendingPeriod({
+        startYear: newInputs.initialRoadmapPeriod.startYear,
+        endYear: newInputs.initialRoadmapPeriod.endYear
+      });
       setIsModalOpen(true);
       setState("BUILDER");
     }, 2500);
   };
 
   const handleSelectTechnology = (tech: Technology) => {
-    if (!inputs) return;
+    if (!inputs || !pendingPeriod) return;
 
     if (roadmapSteps.length === 0) {
-      // First Tech
-      const firstRoadmap = getInitialRoadmap(tech, inputs);
+      // First Tech (or restarting after deletion)
+      const firstRoadmap = [{
+        id: `step-${tech.id}-${pendingPeriod.startYear}`,
+        technology: tech,
+        startYear: pendingPeriod.startYear,
+        endYear: pendingPeriod.endYear,
+      }];
       setRoadmapSteps(firstRoadmap);
     } else {
       // Subsequent Tech
-      const lastStep = roadmapSteps[roadmapSteps.length - 1];
-      const period = lastStep.endYear - lastStep.startYear;
       const nextRoadmap = addRoadmapStep(
         roadmapSteps, 
         tech, 
-        lastStep.endYear, 
-        lastStep.endYear + period
+        pendingPeriod.startYear, 
+        pendingPeriod.endYear
       );
       setRoadmapSteps(nextRoadmap);
     }
     
     setIsModalOpen(false);
+    setPendingPeriod(null);
   };
 
   const handleRequestNextCycle = () => {
-    if (!inputs || roadmapSteps.length === 0) return;
+    if (!inputs) return;
     
-    const lastStep = roadmapSteps[roadmapSteps.length - 1];
-    const nextSuggestions = generateNextCycleSuggestions(lastStep.endYear, inputs);
-    setSuggestions(nextSuggestions);
+    if (roadmapSteps.length === 0) {
+      // Re-initialize from user inputs if timeline was empty
+      const initialSuggestions = generateInitialCycleSuggestions(inputs);
+      setSuggestions(initialSuggestions);
+      setPendingPeriod({
+        startYear: inputs.initialRoadmapPeriod.startYear,
+        endYear: inputs.initialRoadmapPeriod.endYear
+      });
+    } else {
+      // Standard next cycle
+      const lastStep = roadmapSteps[roadmapSteps.length - 1];
+      const periodDuration = lastStep.endYear - lastStep.startYear;
+      const nextSuggestions = generateNextCycleSuggestions(lastStep.endYear, inputs);
+      
+      setSuggestions(nextSuggestions);
+      setPendingPeriod({
+        startYear: lastStep.endYear,
+        endYear: lastStep.endYear + periodDuration
+      });
+    }
+    
     setIsModalOpen(true);
   };
 
@@ -125,6 +152,7 @@ export default function Home() {
           onClose={() => setIsModalOpen(false)}
           technologies={suggestions}
           onSelect={handleSelectTechnology}
+          period={pendingPeriod}
         />
       </div>
     </>

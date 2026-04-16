@@ -15,19 +15,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Technology } from "@/types/decarbonization";
 import { cn } from "@/lib/utils";
 import { 
   TrendingUp, 
   TrendingDown, 
-  Layers, 
-  Zap, 
   ArrowRight,
   ShieldCheck,
   Cpu,
-  Info
+  Calendar,
+  Layers
 } from "lucide-react";
 
 interface ComparisonModalProps {
@@ -35,9 +33,10 @@ interface ComparisonModalProps {
   onClose: () => void;
   technologies: Technology[];
   onSelect: (tech: Technology) => void;
+  period?: { startYear: number; endYear: number } | null;
 }
 
-const ComparisonModal = ({ isOpen, onClose, technologies, onSelect }: ComparisonModalProps) => {
+const ComparisonModal = ({ isOpen, onClose, technologies, onSelect, period }: ComparisonModalProps) => {
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
@@ -48,43 +47,52 @@ const ComparisonModal = ({ isOpen, onClose, technologies, onSelect }: Comparison
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] md:max-w-7xl max-h-[95vh] overflow-hidden flex flex-col bg-white border-none shadow-[0_40px_100px_rgba(0,0,0,0.2)] z-[100] p-0 rounded-[2.5rem]">
-        {/* Header Section */}
-        <DialogHeader className="px-12 pt-12 pb-8 bg-slate-50/80 border-b relative">
-          <div className="flex items-center gap-3 mb-2">
-             <div className="w-2 h-6 bg-sid-green rounded-full" />
-             <span className="text-xs font-black uppercase tracking-[0.3em] text-sid-green/70">Decision Matrix</span>
+      <DialogContent className="max-w-[95vw] md:max-w-6xl max-h-[90vh] overflow-hidden flex flex-col bg-white border-none shadow-[0_40px_100px_rgba(0,0,0,0.3)] z-[100] p-0 rounded-[2.5rem]">
+        {/* Header Section - Medium density with Period display */}
+        <DialogHeader className="px-12 pt-10 pb-6 bg-slate-50 border-b relative">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 mb-1">
+                 <div className="w-1.5 h-4 bg-sid-green rounded-full" />
+                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-sid-green/70">Matriz de Decisão Estratégica</span>
+              </div>
+              <DialogTitle className="text-3xl font-serif font-black tracking-tight leading-none">
+                 Quadro <span className="text-sid-green">Comparativo</span>
+              </DialogTitle>
+            </div>
+
+            {period && (
+              <div className="flex items-center gap-4 bg-white px-6 py-3 rounded-2xl border border-slate-100 shadow-sm">
+                <div className="w-10 h-10 rounded-xl bg-sid-green/10 flex items-center justify-center text-sid-green">
+                   <Calendar size={20} />
+                </div>
+                <div>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Janela de Implementação</p>
+                  <p className="text-xl font-black text-slate-900 font-serif">{period.startYear} — {period.endYear}</p>
+                </div>
+              </div>
+            )}
           </div>
-          <DialogTitle className="text-5xl font-serif font-black tracking-tight leading-none">
-             Estratégias para o <span className="text-sid-green">Próximo Ciclo</span>
-          </DialogTitle>
-          <DialogDescription className="text-xl font-medium text-slate-400 mt-4 max-w-2xl">
-            Compare as métricas de viabilidade e impacto para selecionar a tecnologia de transição.
-          </DialogDescription>
         </DialogHeader>
 
-        {/* Content Section with more padding */}
-        <div className="flex-1 overflow-auto px-12 py-10">
-          <div className="min-w-[950px] pb-10">
-            <Table className="border-separate border-spacing-x-4">
+        {/* Content Section - Balanced Density */}
+        <div className="flex-1 overflow-auto px-12 py-8">
+          <div className="min-w-[900px] pb-4">
+            <Table className="border-separate border-spacing-x-6">
               <TableHeader className="bg-white sticky top-0 z-20">
                 <TableRow className="hover:bg-transparent border-none">
-                  <TableHead className="w-[240px] border-none font-bold py-10 text-slate-300 uppercase tracking-widest text-[11px] align-bottom">
-                      Métricas de Comparação
+                  <TableHead className="w-[180px] border-none font-bold py-4 text-slate-300 uppercase tracking-widest text-[9px] align-bottom pb-10">
+                      Métricas Técnicas
                   </TableHead>
                   {technologies.map((tech) => (
-                    <TableHead key={tech.id} className="min-w-[280px] border-none text-center py-6 px-4">
-                      <div className="space-y-4 p-8 rounded-[2rem] bg-sid-black text-white shadow-xl relative overflow-hidden group">
-                         <div className="absolute top-0 right-0 w-24 h-24 bg-sid-green/10 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150" />
-                         <div className="relative z-10 flex flex-col items-center gap-4">
-                            <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center border border-white/10">
-                               <Cpu size={28} className="text-sid-green" />
+                    <TableHead key={tech.id} className="min-w-[240px] border-none text-center py-2 px-2">
+                      <div className="space-y-3 p-6 rounded-[2rem] bg-sid-black text-white shadow-xl relative overflow-hidden group border-2 border-transparent hover:border-sid-green/30 transition-all">
+                         <div className="relative z-10 flex flex-col items-center gap-2">
+                            <div className="space-y-0.5 text-center">
+                               <p className="text-[8px] font-black uppercase tracking-[0.1em] text-sid-green/60">Solução Sugerida</p>
+                               <div className="text-lg font-serif font-black leading-tight tracking-tight">{tech.name}</div>
                             </div>
-                            <div className="space-y-1 text-center">
-                               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-sid-green">Tecnologia</p>
-                               <div className="text-2xl font-serif font-black leading-tight">{tech.name}</div>
-                            </div>
-                            <Badge className="bg-sid-green text-sid-black font-black uppercase tracking-widest text-[9px] py-1 px-3">
+                            <Badge className="bg-sid-green text-sid-black font-black uppercase tracking-widest text-[8px] py-0.5 px-2.5 h-5 rounded-lg">
                                TRL {tech.implementation.trl}
                             </Badge>
                          </div>
@@ -96,20 +104,20 @@ const ComparisonModal = ({ isOpen, onClose, technologies, onSelect }: Comparison
               <TableBody>
                 {/* Mitigation Potential */}
                 <TableRow className="hover:bg-transparent border-none">
-                  <TableCell className="font-black py-12 align-top text-slate-800 pr-10">
-                     Potencial de Mitigação
-                     <p className="text-xs text-slate-400 font-bold mt-2 leading-relaxed">Capacidade anual de remoção direta de CO2e.</p>
+                  <TableCell className="font-black py-8 align-middle text-slate-800 pr-4 text-[11px] border-r border-slate-50">
+                     Impacto Climático
+                     <p className="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-wider leading-none">Mitigação Anual</p>
                   </TableCell>
                   {technologies.map((tech) => (
-                    <TableCell key={tech.id} className="text-center py-12 px-6">
-                       <div className="space-y-6 bg-slate-50/50 p-8 rounded-3xl border border-slate-100">
-                          <div className="text-4xl font-black text-sid-green flex flex-col gap-1">
+                    <TableCell key={tech.id} className="text-center py-8 px-4">
+                       <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 shadow-inner">
+                          <div className="text-2xl font-black text-sid-green">
                              {tech.mitigationPotential.toLocaleString()} 
-                             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">toneladas / ano</span>
+                             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1.5 font-sans">tCO2e</span>
                           </div>
-                          <div className="h-2.5 w-full bg-slate-200/50 rounded-full overflow-hidden border border-slate-100 shadow-inner">
+                          <div className="h-2 w-full bg-slate-200/50 rounded-full overflow-hidden mt-3 shadow-inner">
                              <div 
-                                className="h-full bg-sid-green shadow-[0_0_20px_rgba(46,204,113,0.5)]" 
+                                className="h-full bg-sid-green transition-all duration-700 shadow-[0_0_15px_rgba(46,204,113,0.5)]" 
                                 style={{ width: `${Math.min(100, (tech.mitigationPotential / 500000) * 100)}%` }} 
                              />
                           </div>
@@ -120,31 +128,31 @@ const ComparisonModal = ({ isOpen, onClose, technologies, onSelect }: Comparison
 
                 {/* Economic Efficiency */}
                 <TableRow className="hover:bg-transparent border-none">
-                  <TableCell className="font-black py-12 align-top text-slate-800 pr-10">
-                     Viabilidade Estratégica
-                     <p className="text-xs text-slate-400 font-bold mt-2 leading-relaxed">Eficiência do capital alocado e retorno projetado.</p>
+                  <TableCell className="font-black py-8 align-middle text-slate-800 pr-4 text-[11px] border-r border-slate-50">
+                     Eficiência Financeira
+                     <p className="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-wider leading-none">ROI e Orçamento</p>
                   </TableCell>
                   {technologies.map((tech) => {
                     const isGoodRoi = tech.economicViability.roi > 0.15;
                     return (
-                      <TableCell key={tech.id} className="text-center py-12 px-6">
-                        <div className="space-y-6">
+                      <TableCell key={tech.id} className="text-center py-8 px-4">
+                        <div className="space-y-4">
                             <div className={cn(
-                              "flex items-center justify-center gap-3 py-3 px-6 rounded-2xl w-fit mx-auto border shadow-sm",
-                              isGoodRoi ? "bg-sid-green/5 text-sid-green border-sid-green/20" : "bg-slate-50 text-slate-500 border-slate-200"
+                              "flex items-center justify-center gap-2 py-1.5 px-4 rounded-xl w-fit mx-auto border shadow-sm",
+                              isGoodRoi ? "bg-sid-green/5 text-sid-green border-sid-green/30" : "bg-slate-50 text-slate-500 border-slate-200"
                             )}>
-                              {isGoodRoi ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
-                              <span className="text-lg font-black italic tracking-tight">ROI: {(tech.economicViability.roi * 100).toFixed(1)}%</span>
+                              {isGoodRoi ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+                              <span className="text-sm font-black italic tracking-tighter">ROI: {(tech.economicViability.roi * 100).toFixed(1)}%</span>
                             </div>
                             
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm transition-transform hover:scale-105">
-                                  <span className="text-[9px] uppercase font-black text-slate-400 block tracking-widest mb-2">CAPEX</span>
-                                  <span className="text-sm font-black text-slate-900">{formatCurrency(tech.economicViability.capex)}</span>
+                            <div className="grid grid-cols-2 gap-3 text-left">
+                                <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+                                  <span className="text-[8px] uppercase font-black text-slate-400 block tracking-widest leading-none mb-1.5">CAPEX</span>
+                                  <span className="text-xs font-black text-slate-950 font-sans tracking-tight">{formatCurrency(tech.economicViability.capex)}</span>
                                 </div>
-                                <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm transition-transform hover:scale-105">
-                                  <span className="text-[9px] uppercase font-black text-slate-400 block tracking-widest mb-2">Custo / t</span>
-                                  <span className="text-sm font-black text-slate-900">{formatCurrency(tech.economicViability.abatementCost)}</span>
+                                <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+                                  <span className="text-[8px] uppercase font-black text-slate-400 block tracking-widest leading-none mb-1.5">CUSTO/T</span>
+                                  <span className="text-xs font-black text-slate-950 font-sans tracking-tight">{formatCurrency(tech.economicViability.abatementCost)}</span>
                                 </div>
                             </div>
                         </div>
@@ -155,14 +163,14 @@ const ComparisonModal = ({ isOpen, onClose, technologies, onSelect }: Comparison
 
                 {/* Tech Highlights */}
                 <TableRow className="hover:bg-transparent border-none">
-                  <TableCell className="font-black py-12 align-top text-slate-800 pr-10">
-                     Análise do Gestor
-                     <p className="text-xs text-slate-400 font-bold mt-2 leading-relaxed">Perspectiva sobre maturidade e desafios.</p>
+                  <TableCell className="font-black py-8 align-middle text-slate-800 pr-4 text-[11px] border-r border-slate-50">
+                     Análise Estratégica
+                     <p className="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-wider leading-none">Resumo Executivo</p>
                   </TableCell>
                   {technologies.map((tech) => (
-                    <TableCell key={tech.id} className="py-12 px-6">
-                       <div className="relative p-8 rounded-3xl bg-slate-50/50 border border-slate-100 italic text-slate-500 text-sm leading-relaxed min-h-[140px] flex items-center">
-                          <Info className="absolute -top-3 -left-3 text-sid-green bg-white rounded-full p-1 border border-slate-100 shadow-sm" size={24} />
+                    <TableCell key={tech.id} className="py-4 px-4">
+                       <div className="relative p-5 rounded-2xl bg-slate-50/50 border border-slate-100 italic text-slate-500 text-[11px] leading-relaxed min-h-[70px] flex items-center shadow-inner">
+                          <Layers size={14} className="absolute -top-2 -left-2 text-sid-green bg-white rounded-lg p-0.5 border border-slate-100 shadow-md" />
                           "{tech.description}"
                        </div>
                     </TableCell>
@@ -171,15 +179,15 @@ const ComparisonModal = ({ isOpen, onClose, technologies, onSelect }: Comparison
 
                 {/* Selection Action */}
                 <TableRow className="hover:bg-transparent border-none">
-                  <TableCell className="py-12"></TableCell>
+                  <TableCell className="py-8"></TableCell>
                   {technologies.map((tech) => (
-                    <TableCell key={tech.id} className="text-center py-16 px-6">
+                    <TableCell key={tech.id} className="text-center py-8 px-4">
                        <Button 
                          onClick={() => onSelect(tech)} 
-                         className="w-full h-20 rounded-[1.5rem] font-black uppercase text-xs tracking-[0.3em] group bg-sid-black hover:bg-sid-green text-white transition-all shadow-[0_20px_50px_rgba(0,0,0,0.1)] hover:shadow-sid-green/40 hover:-translate-y-2 active:scale-95"
+                         className="w-full h-14 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] group bg-sid-black hover:bg-sid-green text-white transition-all shadow-xl hover:-translate-y-1 active:scale-95"
                        >
-                         Integrar à Estratégia
-                         <ArrowRight className="ml-3 h-5 w-5 group-hover:translate-x-2 transition-transform" />
+                         Selecionar Ativo
+                         <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1.5 transition-transform" />
                        </Button>
                     </TableCell>
                   ))}
@@ -189,15 +197,14 @@ const ComparisonModal = ({ isOpen, onClose, technologies, onSelect }: Comparison
           </div>
         </div>
 
-        {/* Footer with improved profile style */}
-        <div className="border-t p-10 flex justify-between items-center bg-slate-50 relative overflow-hidden px-12">
-          <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[radial-gradient(#2ECC71_1px,transparent_1px)] [background-size:20px_20px]" />
-          <div className="flex items-center gap-10 text-[11px] text-slate-400 uppercase font-black tracking-[0.25em] relative z-10">
-             <div className="flex items-center gap-2.5"><ShieldCheck className="text-sid-green" size={20} /> Base de Dados 2026</div>
-             <div className="flex items-center gap-2.5"><Cpu className="text-slate-800" size={20} /> Motor Decisório IA</div>
+        {/* Footer */}
+        <div className="border-t p-6 flex justify-between items-center bg-slate-50 relative px-12">
+          <div className="flex items-center gap-10 text-[9px] text-slate-400 uppercase font-black tracking-[0.2em]">
+             <div className="flex items-center gap-2"><ShieldCheck className="text-sid-green" size={16} /> Auditoria SID</div>
+             <div className="flex items-center gap-2"><Cpu className="text-slate-800" size={16} /> IA Engine v2.0</div>
           </div>
-          <Button variant="ghost" onClick={onClose} className="text-slate-400 hover:text-sid-black font-black uppercase tracking-widest text-[10px] h-14 rounded-2xl px-10 relative z-10 hover:bg-white/50 transition-all">
-            Abandonar Simulação
+          <Button variant="ghost" onClick={onClose} className="text-slate-400 hover:text-sid-black font-black uppercase tracking-widest text-[9px] h-10 rounded-xl px-8 hover:bg-white border border-transparent hover:border-slate-100 transition-all">
+            Retornar ao Simulador
           </Button>
         </div>
       </DialogContent>
