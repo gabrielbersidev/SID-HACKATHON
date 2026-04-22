@@ -63,8 +63,22 @@ CREATE POLICY "Users can insert their own roadmaps" ON roadmaps FOR INSERT WITH 
 CREATE POLICY "Users can delete their own roadmaps" ON roadmaps FOR DELETE USING (auth.uid() = user_id);
 
 -- Políticas para Steps
-CREATE POLICY "Users can manage steps for their own roadmaps" ON roadmap_steps 
-FOR ALL USING (
+CREATE POLICY "Users can insert steps for their own roadmaps" ON roadmap_steps 
+FOR INSERT WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM roadmaps WHERE roadmaps.id = roadmap_id AND roadmaps.user_id = auth.uid()
+  )
+);
+
+CREATE POLICY "Users can view steps for their own roadmaps" ON roadmap_steps 
+FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM roadmaps WHERE roadmaps.id = roadmap_steps.roadmap_id AND roadmaps.user_id = auth.uid()
+  )
+);
+
+CREATE POLICY "Users can delete steps for their own roadmaps" ON roadmap_steps 
+FOR DELETE USING (
   EXISTS (
     SELECT 1 FROM roadmaps WHERE roadmaps.id = roadmap_steps.roadmap_id AND roadmaps.user_id = auth.uid()
   )
@@ -72,3 +86,4 @@ FOR ALL USING (
 
 -- Políticas para Technologies
 CREATE POLICY "Anyone can view technologies" ON technologies FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Authenticated users can insert technologies" ON technologies FOR INSERT TO authenticated WITH CHECK (true);

@@ -29,20 +29,23 @@ export const roadmapService = {
       .insert({
         name: tech.name,
         description: tech.description,
-        mitigation_potential: tech.mitigationPotential,
+        mitigation_potential: Math.round(tech.mitigationPotential),
         capex: tech.economicViability.capex,
         opex: tech.economicViability.opex,
         abatement_cost: tech.economicViability.abatementCost,
         roi: tech.economicViability.roi,
-        payback_period: tech.economicViability.paybackPeriod,
-        trl: tech.implementation.trl,
+        payback_period: Math.round(tech.economicViability.paybackPeriod),
+        trl: Math.round(tech.implementation.trl),
         challenges: tech.implementation.challenges,
         market_competition: tech.marketCompetition
       })
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error("Erro detalhado ao inserir tecnologia:", error);
+      throw new Error(`Falha ao cadastrar tecnologia ${tech.name}: ${error.message}`);
+    }
     return data.id;
   },
 
@@ -78,21 +81,27 @@ export const roadmapService = {
       .select()
       .single();
 
-    if (roadmapError) throw roadmapError;
+    if (roadmapError) {
+      console.error("Erro ao inserir metadados do roadmap:", roadmapError);
+      throw roadmapError;
+    }
 
     // 3. Insert all steps
     const stepsToInsert = stepWithTechIds.map(step => ({
       roadmap_id: roadmapData.id,
       tech_id: step.tech_id,
-      start_year: step.startYear,
-      end_year: step.endYear
+      start_year: Math.round(step.startYear),
+      end_year: Math.round(step.endYear)
     }));
 
     const { error: stepsError } = await supabase
       .from('roadmap_steps')
       .insert(stepsToInsert);
 
-    if (stepsError) throw stepsError;
+    if (stepsError) {
+      console.error("Erro ao inserir passos do roadmap:", stepsError);
+      throw stepsError;
+    }
 
     return roadmapData.id;
   },
